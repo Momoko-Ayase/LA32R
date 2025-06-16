@@ -1,0 +1,1 @@
+--debug "typical" --snapshot "cpu_tb_snapshot" "xil_defaultlib.cpu_tb" -log "elaborate.log" 
