@@ -50,6 +50,7 @@ if exist *.jou ( del *.jou )
 if exist verilog_files.f ( del verilog_files.f )
 if exist webtalk*.xml ( del webtalk*.xml )
 if exist webtalk*.tcl ( del webtalk*.tcl )
+if exist "%PROJECT_ROOT%"simulation*.log ( del "%PROJECT_ROOT%simulation*.log" )
 echo 清理完成。
 echo.
 
