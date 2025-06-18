@@ -16,64 +16,59 @@
 ** A defensive design is implemented to ensure R0 is always zero.
 **
 ** Features:
-** - 32 general-purpose registers, each 32 bits wide.
-** - Asynchronous read: Read ports reflect content immediately.
-** - Synchronous write: Write operation occurs on the rising edge of the clock.
-** - R0 Hardwired to Zero: Cannot be written to, and reading it always returns 0.
+** - 包含32个通用寄存器，每个寄存器宽度为32位。
+** - 异步读：两个读端口可以立即反映所选寄存器的内容，无需时钟同步。
+** - 同步写：写操作在时钟的上升沿进行。
+** - R0硬连线为零：寄存器R0不可写入，读取R0始终返回0。
 **
 ** Revision:
-** Revision 0.01 - File Created
+** Revision 0.01 - 文件创建及基本功能实现。
 ** Additional Comments:
-** - Reset logic is included to initialize all registers to zero, which is good practice for simulation and synthesis.
-**
+** - 包含了复位逻辑，在复位时将所有寄存器初始化为零，这对于仿真和综合是一个良好的实践。
+** - R0始终为零的设计是MIPS等RISC架构的常见特性。
 *******************************************************************************/
 
 module register_file (
-    input  wire        clk,          // 时钟 (Clock)
-    input  wire        rst,          // 复位 (Reset)
-    input  wire        reg_write_en, // 写使能 (Write Enable)
-    input  wire [4:0]  read_addr1,   // 读地址1 (Read Address 1)
-    input  wire [4:0]  read_addr2,   // 读地址2 (Read Address 2)
-    input  wire [4:0]  write_addr,   // 写地址 (Write Address)
-    input  wire [31:0] write_data,   // 写数据 (Write Data)
-    output wire [31:0] read_data1,   // 读数据1 (Read Data 1)
-    output wire [31:0] read_data2    // 读数据2 (Read Data 2)
+    input  wire        clk,          // 时钟信号输入
+    input  wire        rst,          // 复位信号输入 (高有效)
+    input  wire        reg_write_en, // 寄存器写使能信号 (高有效)
+    input  wire [4:0]  read_addr1,   // 第一个读端口的寄存器地址 (5位选择32个寄存器之一)
+    input  wire [4:0]  read_addr2,   // 第二个读端口的寄存器地址
+    input  wire [4:0]  write_addr,   // 写端口的寄存器地址
+    input  wire [31:0] write_data,   // 待写入寄存器的数据
+    output wire [31:0] read_data1,   // 第一个读端口读出的数据
+    output wire [31:0] read_data2    // 第二个读端口读出的数据
 );
 
-    // 声明32个32位的寄存器阵列
-    // Declare an array of 32 registers, each 32 bits wide.
+    // 声明一个包含32个32位寄存器的存储阵列。
     reg [31:0] registers[0:31];
 
+    // 循环变量，用于复位逻辑。
     integer i;
 
-    // 同步写操作 (时钟上升沿触发)
-    // Synchronous write operation (triggered on the rising edge of the clock)
+    // 同步写逻辑：在时钟上升沿或复位信号有效时执行。
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            // 复位时，将所有寄存器清零
-            // On reset, clear all registers to zero.
+            // 当复位信号有效时，将所有寄存器（包括R0）初始化为0。
             for (i = 0; i < 32; i = i + 1) begin
                 registers[i] <= 32'b0;
             end
         end else if (reg_write_en) begin
-            // 写使能有效时，执行写操作
-            // When write enable is active, perform the write operation.
-            // 防御性设计：确保不写入0号寄存器
-            // Defensive design: ensure register R0 is not written to.
+            // 当写使能信号有效时，并且目标地址不是R0（5'd0），才执行写操作。
+            // 这是为了确保R0始终为0。
             if (write_addr != 5'd0) begin
                 registers[write_addr] <= write_data;
             end
         end
     end
 
-    // 异步读操作1
-    // Asynchronous read port 1
-    // 防御性设计：确保读取0号寄存器时返回0
-    // Defensive design: ensure reading from R0 always returns zero.
+    // 异步读端口1的逻辑：
+    // 如果读取地址为R0 (5'd0)，则输出32'b0。
+    // 否则，输出对应地址寄存器的内容。
     assign read_data1 = (read_addr1 == 5'd0) ? 32'b0 : registers[read_addr1];
 
-    // 异步读操作2
-    // Asynchronous read port 2
+    // 异步读端口2的逻辑：
+    // 与读端口1类似，确保读取R0时返回0。
     assign read_data2 = (read_addr2 == 5'd0) ? 32'b0 : registers[read_addr2];
 
 endmodule
