@@ -40,7 +40,7 @@ module control_unit (
     output reg         mem_to_reg,   // 数据选择信号：选择写入寄存器的数据来源 (0: ALU结果, 1: 存储器数据)
     output reg         mem_write_en, // 数据存储器写使能信号
     output reg         alu_src,      // 数据选择信号：选择ALU的B操作数来源 (0: 寄存器, 1: 立即数)
-    output reg         src_reg,      // 数据选择信号：选择寄存器堆的第二个读地址来源 (0: instr[19:15], 1: instr[24:20])
+    output reg         src_reg,      // 数据选择信号：选择寄存器堆的第二个读地址来源 (0: instr[14:10], 1: instr[4:0])
     output reg  [2:0]  ext_op,       // 立即数扩展单元操作控制信号
     output reg  [3:0]  alu_op,       // ALU操作类型控制信号
     output reg         alu_asrc,     // 数据选择信号：选择ALU的A操作数来源 (0: 寄存器, 1: PC / 0 for LUI12I)
@@ -78,7 +78,7 @@ module control_unit (
         mem_to_reg   = 1'b0; // 默认ALU结果写入寄存器
         mem_write_en = 1'b0; // 默认不写入存储器
         alu_src      = 1'b0; // 默认ALU第二操作数来自寄存器
-        src_reg      = 1'b0; // 默认寄存器堆第二读地址来自instr[19:15] (rd)
+        src_reg      = 1'b0; // 默认寄存器堆第二读地址来自instr[14:10] (rk)
         alu_asrc     = 1'b0; // 默认ALU第一操作数来自寄存器
         ext_op       = 3'bxxx; // 默认立即数扩展操作无效
         alu_op       = 4'bxxxx; // 默认ALU操作无效
@@ -97,7 +97,7 @@ module control_unit (
                 else if (instr[25:22] == 4'b0000 && func_3r_f2 == 2'b01) begin // 3R类型指令
                     reg_write_en = 1'b1;       // 需要写回寄存器
                     alu_src      = 1'b0;       // ALU第二操作数来自寄存器
-                    src_reg      = 1'b0;       // 寄存器堆第二读地址来自instr[19:15] (源操作数2)
+                    src_reg      = 1'b0;       // 寄存器堆第二读地址来自instr[14:10] (rk, 源操作数2)
                     case(func_3r_f5)           // 根据 instr[19:15] (func_3r_f5) 决定具体ALU操作
                         5'b00000: alu_op = ALU_ADD;  // ADD
                         5'b00010: alu_op = ALU_SUB;  // SUB
@@ -128,21 +128,23 @@ module control_unit (
                 else if (func_2ri12 == 4'b0110) begin // ST.W 指令 (存储字)
                     mem_write_en = 1'b1;       // 需要写入存储器
                     alu_src      = 1'b1;       // ALU第二操作数为立即数 (地址偏移)
-                    src_reg      = 1'b1;       // 寄存器堆第二读地址来自instr[24:20] (源数据寄存器)
+                    src_reg      = 1'b1;       // 寄存器堆第二读地址来自instr[4:0] (rd, 源数据寄存器)
                     ext_op       = EXT_SI12;   // 12位有符号立即数扩展 (地址偏移)
                     alu_op       = ALU_ADD;    // ALU计算基地址+偏移
                 end
             end
-            OP_B:   ext_op = EXT_SI26; // 无条件分支指令，设置26位有符号立即数扩展
+            OP_B: begin // 无条件分支指令
+                ext_op = EXT_SI26; // 26位有符号立即数扩展
+            end
             OP_BEQ: begin // 相等则分支指令
                 alu_src      = 1'b0;       // ALU比较两个寄存器的值
-                src_reg      = 1'b1;       // 寄存器堆第二读地址来自instr[24:20]
+                src_reg      = 1'b1;       // 寄存器堆第二读地址来自instr[4:0] (rd)
                 ext_op       = EXT_SI16;   // 16位有符号立即数扩展 (分支偏移)
                 alu_op       = ALU_SUB;    // ALU执行减法以判断是否相等 (结果送zero_flag)
             end
             OP_BLT: begin // 小于则分支指令
                 alu_src      = 1'b0;       // ALU比较两个寄存器的值
-                src_reg      = 1'b1;       // 寄存器堆第二读地址来自instr[24:20]
+                src_reg      = 1'b1;       // 寄存器堆第二读地址来自instr[4:0] (rd)
                 ext_op       = EXT_SI16;   // 16位有符号立即数扩展 (分支偏移)
                 alu_op       = ALU_SUB;    // ALU执行减法以判断是否小于 (结果送lt_flag)
             end

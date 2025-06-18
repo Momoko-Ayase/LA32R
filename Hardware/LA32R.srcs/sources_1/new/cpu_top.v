@@ -76,10 +76,10 @@ module cpu_top (
     );
 
     // 立即数扩展器
-    imm_extender u_imm_ext (.instr(instr), .ext_op(ext_op), .imm_ext(imm_ext));
-
+    imm_extender u_imm_ext (.instr(instr), .ext_op(ext_op), .imm_ext(imm_ext));    
+    
     // 决定寄存器堆的第二个读取地址 (用于某些指令格式，如ST.W，其中rt是源数据)
-    wire [4:0] reg_read_addr2_final = src_reg ? instr[4:0] : instr[14:10]; // src_reg=0: rd=instr[19:15] rt=instr[14:10]; src_reg=1: rd=instr[24:20] rt=instr[4:0]
+    wire [4:0] reg_read_addr2_final = src_reg ? instr[4:0] : instr[14:10]; // src_reg=0: rt=instr[14:10] (rk); src_reg=1: rt=instr[4:0] (rd)
 
     // 寄存器堆
     register_file u_reg_file (
