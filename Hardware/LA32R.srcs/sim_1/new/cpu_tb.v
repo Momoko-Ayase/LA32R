@@ -38,6 +38,7 @@ module cpu_tb;
     // --- 信号声明 ---
     reg clk; // 时钟信号
     reg rst; // 复位信号
+    integer i; // 用于for循环的变量
 
     // --- 实例化待测设计 (DUT - Design Under Test) ---
     // 将cpu_top模块实例化为uut (unit under test)
@@ -72,7 +73,7 @@ module cpu_tb;
         $display("                仿真结束。最终寄存器状态如下:                 ");
         $display("------------------------------------------------------------");
         // 使用循环遍历寄存器堆，并通过$display显示其值。注意hierarchical path的正确性。
-        for (integer i = 0; i < 32; i = i + 1) begin
+        for (i = 0; i < 32; i = i + 1) begin
             // 为了简化输出，仅显示值非零的寄存器。
             if (uut.u_reg_file.registers[i] != 32'h00000000) begin
                 $display("寄存器 R%0d: 0x%08h", i, uut.u_reg_file.registers[i]);
